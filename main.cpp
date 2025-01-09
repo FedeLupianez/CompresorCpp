@@ -1,11 +1,9 @@
 #include <array>
 #include <fstream>
 #include <iostream>
-#include <istream>
 #include <ostream>
 #include <sstream>
 #include <string>
-#include <vector>
 
 struct Node {
   char data;   // Dato almacenado en el nodo
@@ -35,13 +33,14 @@ Node *insert(Node *root, char value) {
 
 // Función para buscar un valor en el árbol
 void searchValue(Node *root, char value, std::string &actualRoad) {
-  if (root->data == value) {
-    std::cout << "valor encontrado\n\n";
-    return;
-  }
 
   if (root == nullptr) {
     std::cout << "valor no encontrado\n\n";
+    return;
+  }
+
+  if (root->data == value) {
+    std::cout << "valor encontrado\n\n";
     return;
   }
 
@@ -75,11 +74,14 @@ Node *createTree() {
 void followPath(Node *root, std::string path, int index_direction,
                 char &value) {
 
+  if (root == nullptr)
+    return;
+
   if (index_direction >= path.length()) {
     value = root->data;
     return;
   }
-
+  std::cout << "hola";
   if (path[index_direction] == '0') {
     index_direction++;
     followPath(root->left, path, index_direction, value);
@@ -89,38 +91,58 @@ void followPath(Node *root, std::string path, int index_direction,
   }
 }
 
+void deleteTree(Node *root) {
+  if (root == nullptr)
+    return;
+  deleteTree(root->left);
+  deleteTree(root->right);
+  delete root;
+}
+
 int main() {
   Node *root = createTree();
-  std::string road_to_value;
+  /*std::string road_to_value;
 
   searchValue(root, 'j', road_to_value);
   std::cout << road_to_value << std::endl;
   char result = ' ';
   followPath(root, road_to_value, 0, result);
-  std::cout << "valor encontrado : " << result << '\n';
+  std::cout << "valor encontrado : " << result << '\n';*/
 
   std::ifstream file("archivo.txt");
+  std::ofstream write_file("archivo2.txt");
 
-  if (!file.is_open()) {
+  if (file.peek() == std::ifstream::traits_type::eof()) {
+    std::cerr << "El archivo de entrada esta vacio\n";
+    deleteTree(root);
+    return (1);
+  }
+
+  if (!file.is_open() || !write_file.is_open()) {
     std::cerr << "Hubo un problema al abrir el archivo\n";
+    deleteTree(root);
     return (1);
   }
 
   std::string line;
 
-  /*while (std::getline(file, line)) {
+  while (std::getline(file, line)) {
     std::stringstream stream(line);
     std::string token;
 
     while (std::getline(stream, token, '.')) {
       for (char chr : token) {
         std::cout << chr << std::endl;
-
+        std::string road_to_value;
+        searchValue(root, chr, road_to_value);
+        write_file << road_to_value << " ";
+        road_to_value.clear();
       }
+      write_file << '\n';
     }
-  }*/
-
-  delete root;
-
+  }
+  file.close();
+  write_file.close();
+  deleteTree(root);
   return (0);
 }
