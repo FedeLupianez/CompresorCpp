@@ -1,94 +1,80 @@
-#include <array>
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <ostream>
-#include <sstream>
 #include <string>
+#include <vector>
 
 struct Node {
-  char data;   // Dato almacenado en el nodo
+  char chr; // Dato almacenado en el nodo
+  int frecuency;
   Node *left;  // Puntero al hijo izquierdo
   Node *right; // Puntero al hijo derecho
 
-  Node(int value) {
-    data = value;
-    left = nullptr;
-    right = nullptr;
-  }
+  Node(char ch, int frec, Node *l = nullptr, Node *r = nullptr)
+      : chr(ch), frecuency(frec), left(l), right(r) {}
 };
 
-Node *insert(Node *root, char value) {
-  if (root == nullptr) {
-    return new Node(value);
-  }
-
-  if (value < root->data) {
-    root->left = insert(root->left, value);
-  } else {
-    root->right = insert(root->right, value);
-  }
-
-  return (root);
-}
+// Funcion para comparar nodos por su frecuencia :
+bool compareNodes(Node *a, Node *b) { return (a->frecuency < b->frecuency); }
 
 // Función para buscar un valor en el árbol
-void searchValue(Node *root, char value, std::string &actualRoad) {
+bool searchValue(Node *root, char value, std::string &actual_road) {
 
+  // Si el nodo es null, significa que no encontramos el valor
   if (root == nullptr) {
-    std::cout << "valor no encontrado\n\n";
-    return;
+    return (false);
   }
 
-  if (root->data == value) {
-    std::cout << "valor encontrado\n\n";
-    return;
+  // Si el nodo no tiene hijos y el char es el mismo que el valor, significa que
+  // lo encontramos
+  if (!root->left && !root->right && root->chr == value) {
+    return (true);
   }
 
-  if (root->data > value) {
-    actualRoad += "0";
-    searchValue(root->left, value, actualRoad);
-  } else {
-    actualRoad += "1";
-    searchValue(root->right, value, actualRoad);
+  // Agregamos un '0' al camino y buscamos en el hijo izquierdo
+  actual_road.push_back('0');
+  if (searchValue(root->left, value, actual_road)) {
+    return (true);
   }
+  // Si el valor no se encuentra acá, eliminamos el '0' que pusimos
+  // anteriormente
+  actual_road.pop_back();
+
+  // Repetimos el proceso anterior pero del lado derecho
+  actual_road.push_back('1');
+  if (searchValue(root->right, value, actual_road)) {
+    return (true);
+  }
+  actual_road.pop_back();
+
+  return (false);
 }
 
-// Funcion para insertar los nodos en el árbol
-Node *createTree() {
-  Node *root = nullptr;
-  std::array<int, 95> values = {
-      73,  67,  126, 36,  97,  108, 86,  110, 114, 112, 49, 81,  59,  105,
-      43,  51,  70,  92,  71,  44,  94,  89,  77,  124, 55, 103, 62,  115,
-      50,  72,  123, 75,  38,  127, 35,  58,  125, 41,  88, 101, 63,  61,
-      84,  54,  53,  42,  60,  91,  46,  32,  90,  48,  96, 120, 118, 82,
-      79,  116, 68,  64,  102, 80,  119, 66,  98,  113, 65, 122, 74,  34,
-      121, 76,  78,  87,  33,  47,  109, 104, 83,  52,  95, 57,  85,  111,
-      45,  93,  37,  107, 39,  100, 69,  117, 56,  106, 40};
+// Funcion para crear el árbol de Huffman
+Node *HuffmanTree() {
+  std::vector<Node *> nodes;
 
-  for (int &letter : values) {
-    root = insert(root, letter);
+  for (int chr = 32; chr <= 127; chr++) {
+    nodes.push_back(new Node(chr, 1));
   }
-  return (root);
-}
 
-void followPath(Node *root, std::string path, int index_direction,
-                char &value) {
+  while (nodes.size() > 1) {
+    std::sort(nodes.begin(), nodes.end(), compareNodes);
 
-  if (root == nullptr)
-    return;
+    Node *left = nodes[0];
+    Node *right = nodes[1];
 
-  if (index_direction >= path.length()) {
-    value = root->data;
-    return;
+    Node *combined =
+        new Node('\0', left->frecuency + right->frecuency, left, right);
+
+    nodes.erase(nodes.begin());
+    nodes.erase(nodes.begin());
+
+    nodes.push_back(combined);
   }
-  std::cout << "hola";
-  if (path[index_direction] == '0') {
-    index_direction++;
-    followPath(root->left, path, index_direction, value);
-  } else {
-    index_direction++;
-    followPath(root->right, path, index_direction, value);
-  }
+
+  return (nodes[0]);
 }
 
 void deleteTree(Node *root) {
@@ -100,16 +86,14 @@ void deleteTree(Node *root) {
 }
 
 int main() {
-  Node *root = createTree();
-  /*std::string road_to_value;
+  Node *root = HuffmanTree();
+  char target = 'A';
+  std::string road;
 
-  searchValue(root, 'j', road_to_value);
-  std::cout << road_to_value << std::endl;
-  char result = ' ';
-  followPath(root, road_to_value, 0, result);
-  std::cout << "valor encontrado : " << result << '\n';*/
-
-  std::ifstream file("archivo.txt");
+  if (searchValue(root, target, road)) {
+    std::cout << "valor encontrado, camino : " << road << std::endl;
+  }
+  /*std::ifstream file("archivo.txt");
   std::ofstream write_file("archivo2.txt");
 
   if (file.peek() == std::ifstream::traits_type::eof()) {
@@ -122,27 +106,8 @@ int main() {
     std::cerr << "Hubo un problema al abrir el archivo\n";
     deleteTree(root);
     return (1);
-  }
+  }*/
 
-  std::string line;
-
-  while (std::getline(file, line)) {
-    std::stringstream stream(line);
-    std::string token;
-
-    while (std::getline(stream, token, '.')) {
-      for (char chr : token) {
-        std::cout << chr << std::endl;
-        std::string road_to_value;
-        searchValue(root, chr, road_to_value);
-        write_file << road_to_value << " ";
-        road_to_value.clear();
-      }
-      write_file << '\n';
-    }
-  }
-  file.close();
-  write_file.close();
   deleteTree(root);
   return (0);
 }
