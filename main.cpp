@@ -85,14 +85,38 @@ void deleteTree(Node *root) {
   delete root;
 }
 
+void followPath(Node *root, std::string path, int &actual_index, char &result) {
+
+  if (root == nullptr) {
+    return;
+  }
+
+  if (!root->left && !root->right) {
+    result = root->chr;
+    return;
+  }
+
+  if (path[actual_index] == '0') {
+    actual_index++;
+    followPath(root->left, path, actual_index, result);
+  } else {
+    actual_index++;
+    followPath(root->right, path, actual_index, result);
+  }
+}
+
 int main() {
   Node *root = HuffmanTree();
-  char target = 'A';
+  char target = 'B';
   std::string road;
 
   if (searchValue(root, target, road)) {
     std::cout << "valor encontrado, camino : " << road << std::endl;
   }
+  char value;
+  int actual_index = 0;
+  followPath(root, road, actual_index, value);
+  std::cout << "valor encontrado, char : " << value << std::endl;
   /*std::ifstream file("archivo.txt");
   std::ofstream write_file("archivo2.txt");
 
