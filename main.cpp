@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <asm-generic/errno.h>
 #include <fstream>
 #include <iostream>
 #include <ostream>
@@ -88,6 +89,7 @@ void deleteTree(Node *root) {
 void followPath(Node *root, std::string path, int &actual_index, char &result) {
 
   if (root == nullptr) {
+    result = (char)0;
     return;
   }
 
@@ -105,33 +107,73 @@ void followPath(Node *root, std::string path, int &actual_index, char &result) {
   }
 }
 
-int main() {
-  Node *root = HuffmanTree();
-  char target = 'B';
+void encodeFile(std::string file_path, Node *root) {
+  std::ifstream original(file_path);
+  std::ofstream encoded("encoded.txt");
+
+  if (!original.is_open() || !encoded.is_open()) {
+    std::cerr << "Error al Abrir el archivo\n";
+    deleteTree(root);
+    return;
+  }
+
+  if (original.peek() == std::ifstream::traits_type::eof()) {
+    std::cerr << "El archivo esta vacio\n";
+    deleteTree(root);
+    return;
+  }
+
+  std::string line;
   std::string road;
 
-  if (searchValue(root, target, road)) {
-    std::cout << "valor encontrado, camino : " << road << std::endl;
+  while (std::getline(original, line)) {
+    for (char chr : line) {
+      if (searchValue(root, chr, road)) {
+        encoded << road;
+      }
+      road.clear();
+    }
+    encoded << '\n';
   }
-  char value;
+
+  original.close();
+  encoded.close();
+}
+
+void decodeFile(std::string file_path, Node *root) {
+  std::ifstream encoded(file_path);
+  std::ofstream decoded("decodeFile.txt");
+
+  if (!encoded.is_open() || !decoded.is_open()) {
+    std::cerr << "Error al abrir el archivo\n";
+    return;
+  }
+
+  if (encoded.peek() == std::ifstream::traits_type::eof()) {
+    std::cerr << "EL archivo está vacío";
+    return;
+  }
+
+  std::string line;
   int actual_index = 0;
-  followPath(root, road, actual_index, value);
-  std::cout << "valor encontrado, char : " << value << std::endl;
-  /*std::ifstream file("archivo.txt");
-  std::ofstream write_file("archivo2.txt");
+  char result;
+  while (std::getline(encoded, line)) {
+    actual_index = 0;
+    while (actual_index < line.length()) {
+      followPath(root, line, actual_index, result);
 
-  if (file.peek() == std::ifstream::traits_type::eof()) {
-    std::cerr << "El archivo de entrada esta vacio\n";
-    deleteTree(root);
-    return (1);
+      if (result != (char)0) {
+        decoded << result;
+      }
+    }
+
+    decoded << '\n';
   }
+}
 
-  if (!file.is_open() || !write_file.is_open()) {
-    std::cerr << "Hubo un problema al abrir el archivo\n";
-    deleteTree(root);
-    return (1);
-  }*/
-
+int main() {
+  Node *root = HuffmanTree();
+  decodeFile("encoded.txt", root);
   deleteTree(root);
   return (0);
 }
